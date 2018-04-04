@@ -1,0 +1,106 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: AWS Config Rule and Lambda function to evaluate compliance of EC2 Instance Attributes
+
+Parameters:
+  Owner:
+    Description: The email address to apply to the 'Owner' tag
+    Type: String
+  LambdaS3Bucket:
+    Description: The S3 bucket containing the Lambda function code
+    Type: String
+  LambdaS3CodePath:
+    Description: The path of the Lambda function code within the S3 bucket
+    Type: String
+  ConfigRuleName:
+    Description: The name to give to the AWS Config Rule
+    Type: String
+  AttributeKey:
+    Description: The Attribute Key to provide as a rule parameter to the AWS Config rule
+    Type: String
+  AttributeValue:
+    Description: The Attribute Value to provide as a rule parameter to the AWS Config rule
+    Type: String
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: lambda_execution
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+        - PolicyName: config_execution
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'config:Put*'
+                  - 'config:Get*'
+                  - 'config:List*'
+                  - 'config:Describe*'
+                Resource: '*'
+        - PolicyName: ec2_describe
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'ec2:Describe*'
+                Resource: '*'
+  
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: instance_attribute.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3CodePath
+      Runtime: python3.6
+      Timeout: 60
+      MemorySize: 128
+      Tags:
+        - Key: Owner
+          Value: !Ref Owner
+
+  LambdaExcecutionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: config.amazonaws.com
+
+  ConfigRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: LambdaExcecutionPermission
+    Properties:
+      ConfigRuleName: !Ref ConfigRuleName
+      InputParameters:
+        AttributeKey: !Ref AttributeKey
+        AttributeValue: !Ref AttributeValue
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::EC2::Instance
+      Source:
+        Owner: CUSTOM_LAMBDA
+        SourceDetails:
+          - EventSource: aws.config
+            MessageType: ConfigurationItemChangeNotification
+        SourceIdentifier: !GetAtt LambdaFunction.Arn

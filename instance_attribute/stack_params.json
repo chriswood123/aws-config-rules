@@ -1,0 +1,31 @@
+{
+    "Parameters": [
+        {
+            "ParameterKey": "AttributeKey", 
+            "ParameterValue": ""
+        },
+        {
+            "ParameterKey": "AttributeValue", 
+            "ParameterValue": ""
+        },
+        {
+            "ParameterKey": "ConfigRuleName", 
+            "ParameterValue": ""
+        },
+        {
+            "ParameterKey": "LambdaS3Bucket", 
+            "ParameterValue": ""
+        },
+        {
+            "ParameterKey": "LambdaS3CodePath", 
+            "ParameterValue": ""
+        },
+        {
+            "ParameterKey": "Owner", 
+            "ParameterValue": ""
+        }
+    ], 
+    "Capabilities": [
+        "CAPABILITY_NAMED_IAM"
+    ] 
+}
