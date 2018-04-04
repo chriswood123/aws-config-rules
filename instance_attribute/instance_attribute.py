@@ -1,11 +1,14 @@
 import boto3
 import json
 
-def evaluate_compliance(config_item, instance_id, attribute_key, attribute_value):
+
+def evaluate_compliance(config_item, instance_id,
+                        attribute_key, attribute_value):
     if config_item['resourceType'] != 'AWS::EC2::Instance':
         return 'NOT_APPLICABLE'
-    
-    instance = boto3.client('ec2').describe_instances(InstanceIds=[instance_id])
+
+    client = boto3.client('ec2')
+    instance = client.describe_instances(InstanceIds=[instance_id])
     attributes = instance['Reservations'][0]['Instances'][0]
 
     try:
@@ -24,21 +27,24 @@ def lambda_handler(event, context):
     rule_parameters = json.loads(event['ruleParameters'])
     attribute_key = rule_parameters['AttributeKey']
     attribute_value = rule_parameters['AttributeValue']
+    config_item = invoking_event['configurationItem']
 
-    instance_id = invoking_event['configurationItem']['resourceId']
-    compliance_value = evaluate_compliance(invoking_event['configurationItem'],
-                                            instance_id,
-                                            attribute_key,
-                                            attribute_value)
-    
+    instance_id = config_item['resourceId']
+    compliance_value = evaluate_compliance(config_item,
+                                           instance_id,
+                                           attribute_key,
+                                           attribute_value)
+
     config = boto3.client('config')
+    resouce_type = config_item['resourceType']
+    timestamp = config_item['configurationItemCaptureTime']
     response = config.put_evaluations(
         Evaluations=[
             {
-                'ComplianceResourceType': invoking_event['configurationItem']['resourceType'],
+                'ComplianceResourceType': resouce_type,
                 'ComplianceResourceId': instance_id,
                 'ComplianceType': compliance_value,
-                'OrderingTimestamp': invoking_event['configurationItem']['configurationItemCaptureTime']
+                'OrderingTimestamp': timestamp
             }
         ],
         ResultToken=event['resultToken'])
