@@ -17,19 +17,15 @@ Two parameters are used: 'AttributeKey' and 'AttributeValue'. An example is belo
 
 ## Testing
 
-Testing is done using pytest, e.g.
+Testing is done using unittest, e.g.
 
 ```
-$ pip3 install -r test-requirements.txt
-$ pytest
-============================================ test session starts =============================================
-platform darwin -- Python 3.6.4, pytest-3.5.0, py-1.5.3, pluggy-0.6.0
-rootdir: /chriswood-config/instance_attribute, inifile:
-collected 5 items
+$ python3 test_instance_attribute.py
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.506s
 
-test_instance_attribute.py .....                                                                       [100%]
-
-========================================== 5 passed in 1.71 seconds ==========================================
+OK
 ```
 
 The tests use the moto library to mock the AWS EC2 service.
