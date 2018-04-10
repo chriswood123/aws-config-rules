@@ -36,6 +36,8 @@ The tests use the moto library to mock the AWS EC2 service.
 
 ## Deployment
 
+### Cloudformation
+
 The [Cloudformation template](./instance_attribute_cfn.yaml) can be used to deploy the AWS Config rule and the Lambda function as a cloudformation stack.
 
 A template [CLI input JSON file](./stack_params.json) can be modified to pass parameters when creating this stack. An example of the AWS CLI command to create a stack is shown below.
@@ -45,4 +47,12 @@ $ aws cloudformation create-stack \
   --stack-name ConfigInstanceAttributesStack \
   --cli-input-json file://stack_params.json \
   --template-body file://instance_attribute_cfn.yaml
+```
+
+### Terraform
+
+The [Terraform template](./instance_attribute_terraform.tf) can be used to deploy the AWS Config rule and the Lambda function.
+
+```
+terraform apply -var 'AttributeKey=InstanceType' -var 'AttributeValue=t2.micro'
 ```
